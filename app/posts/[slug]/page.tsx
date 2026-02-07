@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { FaClock, FaUser } from 'react-icons/fa'
 import CommentSection from '@/components/CommentSection'
 import { renderMarkdown } from '@/lib/markdown'
+import { prisma } from '@/lib/db'
 
 type Post = {
     id: string
@@ -9,46 +10,69 @@ type Post = {
     content: string
     excerpt: string | null
     coverImage: string | null
-    createdAt: string
+    published: boolean
+    createdAt: Date
+    updatedAt: Date
     author: {
         id: string
-        name: string | null
         username: string
+        name: string | null
         avatar: string | null
     }
     comments: Array<{
         id: string
         content: string
-        createdAt: string
+        createdAt: Date
         author: {
             id: string
-            name: string | null
             username: string
+            name: string | null
             avatar: string | null
         }
     }>
 }
 
+// 直接使用 Prisma 查询，避免 Vercel 上的 fetch URL 问题
 async function getPost(slug: string): Promise<Post | null> {
     try {
-        // Construct base URL for API calls
-        // In production (Vercel), use VERCEL_URL; in development, use localhost
-        const baseUrl = process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}`
-            : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
+        console.log('[Page] Fetching post with slug:', slug)
 
-        const res = await fetch(`${baseUrl}/api/posts/${slug}`, {
-            cache: 'no-store',
-            next: { revalidate: 0 }
+        const post = await prisma.post.findUnique({
+            where: { slug },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        username: true,
+                        name: true,
+                        avatar: true,
+                    },
+                },
+                comments: {
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                username: true,
+                                name: true,
+                                avatar: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                },
+            },
         })
 
-        if (!res.ok) {
+        if (!post) {
+            console.log('[Page] Post not found:', slug)
             return null
         }
 
-        return await res.json()
+        console.log('[Page] Post found:', post.id)
+        return post
     } catch (error) {
-        console.error('Failed to fetch post:', error)
+        console.error('[Page] Failed to fetch post:', error)
         return null
     }
 }
@@ -62,50 +86,34 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     }
 
     return (
-        <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            {/* Post Header */}
-            <header className="mb-8">
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                    {post.title}
-                </h1>
-
-                <div className="flex items-center gap-6 text-gray-600">
-                    <div className="flex items-center gap-2">
-                        <FaUser />
-                        <span>{post.author.name}</span>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <article className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-purple-100">
+                {/* Header */}
+                <header className="mb-8">
+                    <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        {post.title}
+                    </h1>
+                    <div className="flex items-center gap-6 text-gray-600">
+                        <div className="flex items-center gap-2">
+                            <FaUser className="text-purple-600" />
+                            <span>{post.author.name || post.author.username}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <FaClock className="text-purple-600" />
+                            <span>{new Date(post.createdAt).toLocaleDateString('zh-CN')}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <FaClock />
-                        <time>{new Date(post.createdAt).toLocaleDateString('zh-CN', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        })}</time>
-                    </div>
-                </div>
-            </header>
+                </header>
 
-            {/* Cover Image */}
-            {post.coverImage && (
-                <div className="mb-8 rounded-xl overflow-hidden">
-                    <img
-                        src={post.coverImage}
-                        alt={post.title}
-                        className="w-full h-auto"
-                    />
-                </div>
-            )}
-
-            {/* Post Content */}
-            <div className="prose prose-lg max-w-none mb-12">
+                {/* Content */}
                 <div
-                    className="text-gray-800 leading-relaxed"
+                    className="prose prose-lg max-w-none mb-12"
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
                 />
-            </div>
+            </article>
 
-            {/* Comment Section */}
-            <CommentSection postId={post.id} comments={post.comments || []} />
-        </article>
+            {/* Comments */}
+            <CommentSection postId={post.id} comments={post.comments} />
+        </div>
     )
 }
