@@ -7,6 +7,9 @@ export async function GET(
 ) {
     try {
         const { slug } = await params
+
+        console.log('[API] Fetching post with slug:', slug)
+
         const post = await prisma.post.findUnique({
             where: { slug },
             include: {
@@ -35,17 +38,23 @@ export async function GET(
         })
 
         if (!post) {
+            console.log('[API] Post not found:', slug)
             return NextResponse.json(
                 { error: '文章不存在' },
                 { status: 404 }
             )
         }
 
+        console.log('[API] Post found:', post.id)
         return NextResponse.json(post)
-    } catch (error) {
-        console.error('Fetch post error:', error)
+    } catch (error: any) {
+        console.error('[API] Fetch post error:', {
+            message: error.message,
+            code: error.code,
+            stack: error.stack
+        })
         return NextResponse.json(
-            { error: '获取文章失败' },
+            { error: '获取文章失败', details: error.message },
             { status: 500 }
         )
     }

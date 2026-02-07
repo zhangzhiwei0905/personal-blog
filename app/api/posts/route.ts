@@ -8,6 +8,8 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get('limit') || '10')
         const skip = (page - 1) * limit
 
+        console.log('[API /posts] Fetching posts:', { page, limit, skip })
+
         const [posts, total] = await Promise.all([
             prisma.post.findMany({
                 where: { published: true },
@@ -36,6 +38,9 @@ export async function GET(request: NextRequest) {
             prisma.post.count({ where: { published: true } }),
         ])
 
+        console.log('[API /posts] Found posts:', posts.length, 'Total:', total)
+        console.log('[API /posts] Post slugs:', posts.map(p => p.slug))
+
         return NextResponse.json({
             posts,
             pagination: {
@@ -45,10 +50,14 @@ export async function GET(request: NextRequest) {
                 totalPages: Math.ceil(total / limit),
             },
         })
-    } catch (error) {
-        console.error('Fetch posts error:', error)
+    } catch (error: any) {
+        console.error('[API /posts] Error:', {
+            message: error.message,
+            code: error.code,
+            stack: error.stack
+        })
         return NextResponse.json(
-            { error: '获取文章失败' },
+            { error: '获取文章失败', details: error.message },
             { status: 500 }
         )
     }
