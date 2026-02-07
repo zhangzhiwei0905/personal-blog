@@ -113,7 +113,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             </article>
 
             {/* Comments */}
-            <CommentSection postId={post.id} comments={post.comments} />
+            <CommentSection
+                postId={post.id}
+                comments={post.comments.map(comment => ({
+                    ...comment,
+                    createdAt: comment.createdAt.toISOString()
+                }))}
+            />
         </div>
     )
 }
