@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #9333ea, #ec4899);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #7e22ce, #db2777);
+}
+
+/* Global styles */
+body {
+  background: linear-gradient(to bottom right, #fafafa, #fae8ff, #fce7f3);
+  min-height: 100vh;
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid #a855f7;
+  outline-offset: 2px;
+}

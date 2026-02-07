@@ -1,0 +1,98 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+
+export async function GET(
+    request: NextRequest,
+    { params }: { params: { slug: string } }
+) {
+    try {
+        const post = await prisma.post.findUnique({
+            where: { slug: params.slug },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        username: true,
+                        name: true,
+                        avatar: true,
+                    },
+                },
+                comments: {
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                username: true,
+                                name: true,
+                                avatar: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                },
+            },
+        })
+
+        if (!post) {
+            return NextResponse.json(
+                { error: '文章不存在' },
+                { status: 404 }
+            )
+        }
+
+        return NextResponse.json(post)
+    } catch (error) {
+        console.error('Fetch post error:', error)
+        return NextResponse.json(
+            { error: '获取文章失败' },
+            { status: 500 }
+        )
+    }
+}
+
+export async function PUT(
+    request: NextRequest,
+    { params }: { params: { slug: string } }
+) {
+    try {
+        const { title, content, excerpt, coverImage, published } = await request.json()
+
+        const post = await prisma.post.update({
+            where: { slug: params.slug },
+            data: {
+                title,
+                content,
+                excerpt,
+                coverImage,
+                published,
+            },
+        })
+
+        return NextResponse.json(post)
+    } catch (error) {
+        console.error('Update post error:', error)
+        return NextResponse.json(
+            { error: '更新文章失败' },
+            { status: 500 }
+        )
+    }
+}
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: { slug: string } }
+) {
+    try {
+        await prisma.post.delete({
+            where: { slug: params.slug },
+        })
+
+        return NextResponse.json({ message: '文章已删除' })
+    } catch (error) {
+        console.error('Delete post error:', error)
+        return NextResponse.json(
+            { error: '删除文章失败' },
+            { status: 500 }
+        )
+    }
+}
