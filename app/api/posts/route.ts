@@ -11,7 +11,15 @@ export async function GET(request: NextRequest) {
         const [posts, total] = await Promise.all([
             prisma.post.findMany({
                 where: { published: true },
-                include: {
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    excerpt: true,
+                    coverImage: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    // 不包含 content 字段，减少数据传输
                     author: {
                         select: {
                             id: true,

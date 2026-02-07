@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { FaClock, FaUser } from 'react-icons/fa'
 import CommentSection from '@/components/CommentSection'
+import { renderMarkdown } from '@/lib/markdown'
 
 type Post = {
     id: string
@@ -92,7 +93,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <div className="prose prose-lg max-w-none mb-12">
                 <div
                     className="text-gray-800 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
                 />
             </div>
 

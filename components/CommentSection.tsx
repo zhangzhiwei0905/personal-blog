@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FaClock, FaTrash } from 'react-icons/fa'
 
 interface Comment {
@@ -24,7 +24,34 @@ export default function CommentSection({ postId, comments: initialComments }: Co
     const [comments, setComments] = useState(initialComments)
     const [newComment, setNewComment] = useState('')
     const [loading, setLoading] = useState(false)
-    const [user, setUser] = useState<any>(null) // In real app, get from auth context
+    const [user, setUser] = useState<any>(null)
+
+    useEffect(() => {
+        // Load user from localStorage
+        const loadUser = () => {
+            const storedUser = localStorage.getItem('user')
+            if (storedUser) {
+                try {
+                    setUser(JSON.parse(storedUser))
+                } catch (error) {
+                    console.error('Failed to parse user:', error)
+                }
+            }
+        }
+
+        loadUser()
+
+        // Listen for login events
+        const handleUserLogin = () => {
+            loadUser()
+        }
+
+        window.addEventListener('userLogin', handleUserLogin)
+
+        return () => {
+            window.removeEventListener('userLogin', handleUserLogin)
+        }
+    }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -80,28 +107,28 @@ export default function CommentSection({ postId, comments: initialComments }: Co
                     <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="写下你的评论..."
+                        placeholder="分享你的想法..."
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none"
                         rows={4}
                     />
-                    <div className="mt-3 flex justify-end">
+                    <div className="mt-2 flex justify-end">
                         <button
                             type="submit"
                             disabled={loading || !newComment.trim()}
                             className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? '发表中...' : '发表评论'}
+                            {loading ? '发送中...' : '发表评论'}
                         </button>
                     </div>
                 </form>
             ) : (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8 text-center">
-                    <p className="text-gray-600 mb-3">登录后即可发表评论</p>
+                <div className="mb-8 text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-gray-600 mb-4">登录后即可发表评论</p>
                     <a
-                        href="/login"
+                        href={`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`}
                         className="inline-block px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all"
                     >
-                        登录
+                        立即登录
                     </a>
                 </div>
             )}

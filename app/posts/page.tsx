@@ -1,14 +1,28 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { FaClock, FaUser } from 'react-icons/fa'
 
-async function getPosts() {
-    // In production, this would fetch from your API
-    // For now, returning empty array
-    return { posts: [], pagination: { page: 1, totalPages: 0 } }
-}
+export default function PostsPage() {
+    const [posts, setPosts] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
 
-export default async function PostsPage() {
-    const { posts } = await getPosts()
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                const res = await fetch('/api/posts')
+                const data = await res.json()
+                setPosts(data.posts || [])
+            } catch (error) {
+                console.error('Failed to fetch posts:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchPosts()
+    }, [])
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -19,7 +33,11 @@ export default async function PostsPage() {
                 <p className="text-gray-600">探索我的思考和分享</p>
             </div>
 
-            {posts.length === 0 ? (
+            {loading ? (
+                <div className="text-center py-16">
+                    <p className="text-gray-500 text-lg">加载中...</p>
+                </div>
+            ) : posts.length === 0 ? (
                 <div className="text-center py-16">
                     <p className="text-gray-500 text-lg mb-6">还没有文章</p>
                     <Link
@@ -54,7 +72,7 @@ export default async function PostsPage() {
                                 <div className="flex items-center gap-4 text-sm text-gray-500">
                                     <div className="flex items-center gap-1">
                                         <FaUser size={12} />
-                                        <span>{post.author.name}</span>
+                                        <span>{post.author.name || post.author.username}</span>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <FaClock size={12} />

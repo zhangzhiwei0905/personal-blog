@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { FaEnvelope, FaLock } from 'react-icons/fa'
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -32,7 +33,15 @@ export default function LoginPage() {
                 throw new Error(data.error || '登录失败')
             }
 
-            router.push('/')
+            // Save user session to localStorage
+            localStorage.setItem('user', JSON.stringify(data.user))
+
+            // Dispatch custom event to notify navbar
+            window.dispatchEvent(new Event('userLogin'))
+
+            // Redirect to returnUrl or home
+            const returnUrl = searchParams.get('returnUrl') || '/'
+            router.push(returnUrl)
             router.refresh()
         } catch (err: any) {
             setError(err.message)

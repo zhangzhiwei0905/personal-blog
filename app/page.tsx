@@ -1,19 +1,28 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { FaArrowRight, FaClock, FaUser } from 'react-icons/fa'
 
 export default function HomePage() {
-  // This will be replaced with actual data from the database
-  const recentPosts = [
-    {
-      id: '1',
-      title: '欢迎来到我的博客',
-      excerpt: '这是一个使用 Next.js、Tailwind CSS 和 Supabase 构建的现代化个人博客...',
-      author: '博主',
-      createdAt: new Date().toISOString(),
-      slug: 'welcome',
-      coverImage: null,
-    },
-  ]
+  const [recentPosts, setRecentPosts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch('/api/posts?limit=6')
+        const data = await res.json()
+        setRecentPosts(data.posts || [])
+      } catch (error) {
+        console.error('Failed to fetch posts:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPosts()
+  }, [])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -42,35 +51,51 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recentPosts.map((post) => (
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">加载中...</p>
+          </div>
+        ) : recentPosts.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">还没有文章</p>
             <Link
-              key={post.id}
-              href={`/posts/${post.slug}`}
-              className="group bg-white/80 backdrop-blur-sm rounded-xl shadow-md hover:shadow-2xl transition-all overflow-hidden border border-gray-200 hover:border-purple-300"
+              href="/create"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all"
             >
-              {post.coverImage && (
-                <div className="aspect-video bg-gradient-to-br from-purple-400 to-pink-400" />
-              )}
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-purple-600 transition-colors">
-                  {post.title}
-                </h3>
-                <p className="text-gray-600 mb-4 line-clamp-3">{post.excerpt}</p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <FaUser size={12} />
-                    <span>{post.author}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <FaClock size={12} />
-                    <span>{new Date(post.createdAt).toLocaleDateString('zh-CN')}</span>
+              写第一篇文章
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recentPosts.map((post) => (
+              <Link
+                key={post.id}
+                href={`/posts/${post.slug}`}
+                className="group bg-white/80 backdrop-blur-sm rounded-xl shadow-md hover:shadow-2xl transition-all overflow-hidden border border-gray-200 hover:border-purple-300"
+              >
+                {post.coverImage && (
+                  <div className="aspect-video bg-gradient-to-br from-purple-400 to-pink-400" />
+                )}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-purple-600 transition-colors">
+                    {post.title}
+                  </h3>
+                  <p className="text-gray-600 mb-4 line-clamp-3">{post.excerpt}</p>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <FaUser size={12} />
+                      <span>{post.author.name || post.author.username}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <FaClock size={12} />
+                      <span>{new Date(post.createdAt).toLocaleDateString('zh-CN')}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* CTA Section */}

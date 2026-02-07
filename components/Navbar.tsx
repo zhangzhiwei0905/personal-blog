@@ -1,18 +1,72 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaPen } from 'react-icons/fa'
 
-interface NavbarProps {
-    user?: {
-        name: string
-        email: string
-    } | null
-}
-
-export default function Navbar({ user }: NavbarProps) {
+export default function Navbar() {
+    const router = useRouter()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [user, setUser] = useState<{ id: string; name: string | null; username: string; email: string } | null>(null)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+
+        // Load user from localStorage
+        const loadUser = () => {
+            const storedUser = localStorage.getItem('user')
+            console.log('Stored user:', storedUser) // Debug log
+            if (storedUser) {
+                try {
+                    const parsedUser = JSON.parse(storedUser)
+                    console.log('Parsed user:', parsedUser) // Debug log
+                    setUser(parsedUser)
+                } catch (error) {
+                    console.error('Failed to parse user from localStorage:', error)
+                    localStorage.removeItem('user')
+                }
+            }
+        }
+
+        loadUser()
+
+        // Listen for login events
+        const handleUserLogin = () => {
+            loadUser()
+        }
+
+        window.addEventListener('userLogin', handleUserLogin)
+
+        return () => {
+            window.removeEventListener('userLogin', handleUserLogin)
+        }
+    }, [])
+
+    const handleLogout = () => {
+        localStorage.removeItem('user')
+        setUser(null)
+        router.push('/')
+        router.refresh()
+    }
+
+    // Prevent hydration mismatch
+    if (!mounted) {
+        return (
+            <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        <Link href="/" className="flex items-center">
+                            <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                我的博客
+                            </span>
+                        </Link>
+                    </div>
+                </div>
+            </nav>
+        )
+    }
 
     return (
         <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-gray-200">
@@ -50,14 +104,14 @@ export default function Navbar({ user }: NavbarProps) {
                                     写文章
                                 </Link>
                                 <div className="flex items-center gap-4">
-                                    <span className="text-gray-600">{user.name}</span>
-                                    <Link
-                                        href="/api/auth/signout"
+                                    <span className="text-gray-600">{user.name || user.username}</span>
+                                    <button
+                                        onClick={handleLogout}
                                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                                     >
                                         <FaSignOutAlt size={14} />
                                         退出
-                                    </Link>
+                                    </button>
                                 </div>
                             </>
                         ) : (
@@ -117,15 +171,17 @@ export default function Navbar({ user }: NavbarProps) {
                                         写文章
                                     </Link>
                                     <div className="pt-4 border-t border-gray-200">
-                                        <p className="text-gray-600 mb-3">{user.name}</p>
-                                        <Link
-                                            href="/api/auth/signout"
+                                        <p className="text-gray-600 mb-3">{user.name || user.username}</p>
+                                        <button
+                                            onClick={() => {
+                                                handleLogout()
+                                                setMobileMenuOpen(false)
+                                            }}
                                             className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors w-fit"
-                                            onClick={() => setMobileMenuOpen(false)}
                                         >
                                             <FaSignOutAlt size={14} />
                                             退出
-                                        </Link>
+                                        </button>
                                     </div>
                                 </>
                             ) : (
