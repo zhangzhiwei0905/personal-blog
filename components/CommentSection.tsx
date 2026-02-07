@@ -9,8 +9,9 @@ interface Comment {
     createdAt: string
     author: {
         id: string
-        name: string
+        name: string | null
         username: string
+        avatar: string | null
     }
 }
 
@@ -111,7 +112,7 @@ export default function CommentSection({ postId, comments: initialComments }: Co
                     <div key={comment.id} className="bg-gray-50 rounded-lg p-6">
                         <div className="flex items-start justify-between mb-3">
                             <div>
-                                <p className="font-semibold text-gray-900">{comment.author.name}</p>
+                                <p className="font-semibold text-gray-900">{comment.author.name || comment.author.username}</p>
                                 <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                                     <FaClock size={12} />
                                     <time>{new Date(comment.createdAt).toLocaleDateString('zh-CN')}</time>

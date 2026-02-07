@@ -3,11 +3,12 @@ import { prisma } from '@/lib/db'
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { slug: string } }
+    { params }: { params: Promise<{ slug: string }> }
 ) {
     try {
+        const { slug } = await params
         const post = await prisma.post.findUnique({
-            where: { slug: params.slug },
+            where: { slug },
             include: {
                 author: {
                     select: {
@@ -52,13 +53,14 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { slug: string } }
+    { params }: { params: Promise<{ slug: string }> }
 ) {
     try {
+        const { slug } = await params
         const { title, content, excerpt, coverImage, published } = await request.json()
 
         const post = await prisma.post.update({
-            where: { slug: params.slug },
+            where: { slug },
             data: {
                 title,
                 content,
@@ -80,11 +82,12 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { slug: string } }
+    { params }: { params: Promise<{ slug: string }> }
 ) {
     try {
+        const { slug } = await params
         await prisma.post.delete({
-            where: { slug: params.slug },
+            where: { slug },
         })
 
         return NextResponse.json({ message: '文章已删除' })

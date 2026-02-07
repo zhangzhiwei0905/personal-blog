@@ -2,14 +2,52 @@ import { notFound } from 'next/navigation'
 import { FaClock, FaUser } from 'react-icons/fa'
 import CommentSection from '@/components/CommentSection'
 
-async function getPost(slug: string) {
-    // In production, this would fetch from your API
-    // For now, returning null to show 404
-    return null
+type Post = {
+    id: string
+    title: string
+    content: string
+    excerpt: string | null
+    coverImage: string | null
+    createdAt: string
+    author: {
+        id: string
+        name: string | null
+        username: string
+        avatar: string | null
+    }
+    comments: Array<{
+        id: string
+        content: string
+        createdAt: string
+        author: {
+            id: string
+            name: string | null
+            username: string
+            avatar: string | null
+        }
+    }>
 }
 
-export default async function PostPage({ params }: { params: { slug: string } }) {
-    const post = await getPost(params.slug)
+async function getPost(slug: string): Promise<Post | null> {
+    try {
+        const res = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/posts/${slug}`, {
+            cache: 'no-store'
+        })
+
+        if (!res.ok) {
+            return null
+        }
+
+        return await res.json()
+    } catch (error) {
+        console.error('Failed to fetch post:', error)
+        return null
+    }
+}
+
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params
+    const post = await getPost(slug)
 
     if (!post) {
         notFound()
