@@ -31,8 +31,15 @@ type Post = {
 
 async function getPost(slug: string): Promise<Post | null> {
     try {
-        const res = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/posts/${slug}`, {
-            cache: 'no-store'
+        // Construct base URL for API calls
+        // In production (Vercel), use VERCEL_URL; in development, use localhost
+        const baseUrl = process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
+
+        const res = await fetch(`${baseUrl}/api/posts/${slug}`, {
+            cache: 'no-store',
+            next: { revalidate: 0 }
         })
 
         if (!res.ok) {
